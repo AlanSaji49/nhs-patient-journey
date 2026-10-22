@@ -1,0 +1,969 @@
+<title>NHS Patient Journey Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a vertical journey of stage bands (Stage 1 to 5) with a sticky detail panel; acuity colours mark levels of care. */
+:root {
+  --bg: #F3F6F6;
+  --surface: #FFFFFF;
+  --soft: #F7FAFA;
+  --ink: #13262B;
+  --muted: #586B70;
+  --line: #D3DDDE;
+  --accent: #0E6C73;
+  --accent-soft: #E1F0F1;
+  --l1: #2E8B66;
+  --l2: #B97C0C;
+  --l3: #BE3A2D;
+  --death-bg: #2B3638;
+  --death-fg: #FFFFFF;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E191B; --surface: #152428; --soft: #1A2B30; --ink: #E3EDED; --muted: #93A8AC;
+    --line: #2B3F44; --accent: #4DB7BE; --accent-soft: #173A3E;
+    --l1: #5AC598; --l2: #E6AE47; --l3: #EF7365; --death-bg: #E3EDED; --death-fg: #13262B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E191B; --surface: #152428; --soft: #1A2B30; --ink: #E3EDED; --muted: #93A8AC;
+  --line: #2B3F44; --accent: #4DB7BE; --accent-soft: #173A3E;
+  --l1: #5AC598; --l2: #E6AE47; --l3: #EF7365; --death-bg: #E3EDED; --death-fg: #13262B;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1260px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+p { margin: 0; }
+b { font-weight: 700; }
+
+/* Header */
+.top { padding-block: 40px 24px; }
+.eyebrow, .kicker, .stage-no, .group-label { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.top h1 { font-size: clamp(2rem, 4.4vw, 3.3rem); font-weight: 700; margin-top: 8px; letter-spacing: -.01em; }
+.lead { max-width: 64ch; color: var(--muted); margin-top: 12px; font-size: 16px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.toc a { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; }
+.toc a:hover, .toc a:focus-visible { border-color: var(--accent); outline: none; }
+.scope { margin-top: 16px; font-size: 13.5px; color: var(--muted); max-width: 70ch; }
+.scope b { color: var(--ink); }
+
+/* Sections */
+section.chart { padding-block: 28px 40px; border-top: 1px solid var(--line); }
+.chart-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+.chart-head h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); font-weight: 700; }
+.chart-head p { color: var(--muted); max-width: 60ch; }
+
+.every { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; font-size: 14px; }
+.every .kicker { color: var(--accent); }
+
+/* Map layout */
+.map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.map { display: flex; flex-direction: column; min-width: 0; }
+
+.stage { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.stage-label { display: flex; flex-direction: column; gap: 2px; }
+.stage-name { font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.15; }
+.stage-note { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+.stage-body { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.flow { display: flex; align-items: center; gap: 10px; padding: 6px 0 6px 64px; color: var(--muted); font-size: 12.5px; }
+.flow svg { flex: none; }
+.flow svg path { stroke: var(--accent); fill: none; }
+.flow svg polygon { fill: var(--accent); }
+
+.super { display: flex; flex-direction: column; gap: 8px; }
+.super-title { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--accent); letter-spacing: .02em; }
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+/* Nodes */
+.node { appearance: none; font: inherit; color: inherit; text-align: left; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 6px; background: var(--soft); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; transition: opacity .18s, border-color .18s, background .18s; }
+.node:hover { border-color: var(--accent); }
+.node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.node-title { font-weight: 700; font-size: 15px; line-height: 1.25; }
+.node-sub { font-size: 13px; color: var(--muted); }
+.node-line { font-size: 13px; }
+.node-line .arrow { color: var(--accent); font-weight: 700; }
+.map.has-sel .node { opacity: .32; }
+.map.has-sel .node.is-linked { opacity: 1; border-color: var(--accent); border-style: dashed; }
+.map.has-sel .node.is-selected { opacity: 1; border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: 11.5px; line-height: 1.3; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); white-space: nowrap; }
+.chip.death { background: var(--death-bg); color: var(--death-fg); border-color: var(--death-bg); }
+.chips-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); align-self: center; margin-right: 2px; }
+.tag { align-self: flex-start; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 1px 6px; }
+
+/* Stage 4 */
+.inpatient { display: flex; flex-direction: column; gap: 12px; }
+.ladder { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; }
+.ladder-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.ladder-head h4 { font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.ladder-head span { font-size: 12.5px; color: var(--muted); }
+.ladder-body { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; }
+.ladder-rail { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rail-bar { flex: 1; width: 6px; border-radius: 3px; background: linear-gradient(var(--l3), var(--l2), var(--l1)); min-height: 40px; }
+.rail-arrow { font-size: 12px; line-height: 1; color: var(--muted); }
+.rail-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); text-align: center; line-height: 1.2; }
+.rungs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.lvl { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.lvl::before { content: ""; border-radius: 3px; background: var(--lvl-color, var(--line)); }
+.lvl1 { --lvl-color: var(--l1); }
+.lvl2 { --lvl-color: var(--l2); }
+.lvl3 { --lvl-color: var(--l3); }
+.lvl-name { font-weight: 700; font-size: 14px; }
+.lvl-def { font-size: 12.5px; color: var(--muted); }
+.lvl-stack { display: flex; flex-direction: column; gap: 10px; }
+
+.gate { border: 1.5px dashed var(--accent); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.gate h4 { font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.gate-forms { font-family: var(--font-mono); font-size: 12px; }
+.gate-q { font-weight: 700; font-size: 14px; }
+.gate-split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gate-split div { border-radius: 8px; padding: 8px; font-size: 12.5px; background: var(--soft); border: 1px solid var(--line); }
+.gate-split b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.gate-yes b { color: var(--l3); }
+.gate-no b { color: var(--l1); }
+.acuity { font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 8px; }
+.acuity b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.gate-swap { font-size: 12.5px; color: var(--muted); }
+
+.dest-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.dest { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: var(--surface); }
+.dest strong { display: block; font-family: var(--font-display); font-size: 16px; }
+.dest span { font-size: 12.5px; color: var(--muted); }
+
+/* Panel */
+.panel { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; max-height: calc(100vh - 32px); overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.panel h3 { font-size: 21px; }
+.panel h4 { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.panel ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.panel-desc { font-size: 14px; color: var(--muted); }
+.panel-links { display: flex; flex-direction: column; gap: 6px; }
+.panel-link { appearance: none; font: inherit; color: var(--ink); text-align: left; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; cursor: pointer; font-size: 13.5px; }
+.panel-link:hover, .panel-link:focus-visible { border-color: var(--accent); outline: none; }
+.panel-link small { display: block; color: var(--muted); font-size: 12px; }
+.panel-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.panel-close { appearance: none; font: inherit; font-size: 12.5px; color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.panel-close:focus-visible { outline: 2px solid var(--accent); }
+.panel-empty p { font-size: 14px; color: var(--muted); }
+.legend { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.legend-item { display: flex; align-items: center; gap: 8px; }
+.swatch { width: 22px; height: 8px; border-radius: 3px; flex: none; }
+.swatch-dashed { width: 22px; height: 14px; border: 1.5px dashed var(--accent); border-radius: 4px; flex: none; }
+
+/* Key routes */
+.routes { margin-top: 20px; overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.routes table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+.routes th, .routes td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.routes tr:last-child td { border-bottom: 0; }
+.routes th { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.routes td:first-child { font-weight: 700; width: 34%; }
+.routes-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; padding: 14px 14px 4px; }
+
+/* Charts B and C */
+.cflow { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+.cbox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; max-width: 640px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.cbox.key { border-color: var(--accent); background: var(--accent-soft); }
+.cbox h3 { font-size: 19px; }
+.cbox p { font-size: 14.5px; }
+.cbox ul { margin: 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
+.connector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-block: 8px; color: var(--muted); font-size: 13px; text-align: center; }
+.connector .bar { width: 2px; height: 18px; background: var(--accent); border-radius: 1px; }
+.streams { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.stream { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.stream-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.stream h4 { font-size: 17px; }
+.when { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--l2); }
+.staff { font-size: 13.5px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.stream ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
+.dc { color: var(--accent); font-weight: 700; }
+.notes { max-width: 640px; margin: 14px auto 0; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.cdest { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
+.cdest .dest { text-align: center; }
+
+footer { border-top: 1px solid var(--line); padding-block: 20px 40px; font-size: 13px; color: var(--muted); }
+
+/* Tabs */
+.top { padding-bottom: 0; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-top: 20px; }
+.tab { appearance: none; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 15px; padding: 10px 14px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tabpanel > .toc { margin-top: 20px; margin-bottom: 4px; }
+.tabpanel > section.chart:first-child, .tabpanel > .toc + section.chart { border-top: 0; }
+
+/* Cases */
+.case-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 32px; margin-bottom: 18px; }
+.patient h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin: 4px 0 12px; }
+.facts { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.facts div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; font-size: 14px; }
+.facts dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.facts dd { margin: 0; }
+.case-story { font-size: 15.5px; max-width: 62ch; align-self: center; }
+.timeline { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.timeline li { border-top: 3px solid var(--accent); background: var(--surface); border-radius: 0 0 8px 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.timeline li.t-delay { border-top-color: var(--l2); }
+.t-time { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.t-delay .t-time { color: var(--l2); }
+.t-place { font-weight: 700; font-size: 14px; }
+.hint { font-size: 13.5px; color: var(--muted); margin-bottom: 12px; }
+.case-map .node { cursor: default; }
+.case-map .node:hover { border-color: var(--line); }
+.case-map .chips { display: none; }
+.case-map .is-unused { opacity: .3; filter: grayscale(1); }
+.case-map .node.is-used, .case-map .gate.is-used { border: 2px solid var(--accent); background: var(--surface); box-shadow: 0 2px 10px rgba(14, 108, 115, .12); }
+.case-map .node.is-used:hover { border-color: var(--accent); }
+.case-map .dest.is-used { border: 2px solid var(--accent); background: var(--accent-soft); }
+.case-map .lvl.lvl-used { border: 2px solid var(--l3); border-radius: 8px; padding: 8px; background: var(--soft); }
+.case-note { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px; display: flex; flex-direction: column; gap: 4px; }
+.case-time { font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.case-where { font-weight: 700; font-size: 14px; }
+.case-note ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 3px; }
+.stage-callout { border-radius: 9px; padding: 10px 12px; font-size: 13.5px; background: var(--soft); border: 1px dashed var(--line); color: var(--muted); }
+.stage-callout.alert { border: 2px solid var(--l2); color: var(--ink); background: var(--surface); }
+.stage-callout.alert b { color: var(--l2); }
+.takeaway { margin-top: 20px; background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; max-width: 80ch; }
+.takeaway .kicker { color: var(--accent); }
+
+/* Abbreviations */
+.filter { display: flex; align-items: center; gap: 10px; }
+.filter input { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 220px; max-width: 100%; }
+.filter input:focus-visible { outline: 2px solid var(--accent); border-color: var(--accent); }
+.abbr { margin-top: 0; }
+.abbr td:first-child { font-family: var(--font-mono); font-weight: 500; width: 22%; white-space: nowrap; }
+.abbr-empty { padding: 14px; color: var(--muted); font-size: 14px; }
+
+/* Responsive */
+@media (max-width: 760px) {
+  .case-head { grid-template-columns: minmax(0, 1fr); }
+  .facts div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+@media (max-width: 1080px) {
+}
+@media (max-width: 960px) {
+  .map-layout { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: fixed; top: auto; left: 0; right: 0; bottom: 0; max-height: 58vh; border-radius: 14px 14px 0 0; z-index: 20; box-shadow: 0 -8px 28px rgba(0,0,0,.18); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .panel:not(.is-open) { display: none; }
+}
+@media (max-width: 640px) {
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .stage-label { flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .stage-note { margin-top: 0; }
+  .flow { padding-left: 16px; }
+  .dest-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node { transition: none; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <h1 style="margin-top:0">The NHS patient journey</h1>
+    <p class="lead">How adult patients enter, move through and leave an NHS acute hospital. The themes are the same whatever the specialty or presentation. Explore the map, then follow two patients through it.</p>
+    <p class="scope"><b>Scope:</b> adult acute and elective pathways only. Paediatric, maternity and mental health pathways are excluded.</p>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" type="button" data-tab="journey" aria-selected="true">The journey</button>
+      <button class="tab" role="tab" type="button" data-tab="case1" aria-selected="false">Case 1 · Daniel</button>
+      <button class="tab" role="tab" type="button" data-tab="case2" aria-selected="false">Case 2 · Arthur</button>
+      <button class="tab" role="tab" type="button" data-tab="abbreviations" aria-selected="false">Abbreviations</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="tabpanel" data-panel="journey" role="tabpanel">
+  <nav class="toc" aria-label="Charts">
+    <a href="#journey">Chart A · The journey</a>
+    <a href="#ward-discharge">Chart B · Discharge from the wards</a>
+    <a href="#short-discharge">Chart C · Short-form discharge</a>
+  </nav>
+
+  <section class="chart" id="journey">
+    <div class="chart-head">
+      <h2>Chart A · The journey</h2>
+      <p>Five stages from first contact to discharge. Death is a possible exit wherever a patient is in hospital.</p>
+    </div>
+
+    <div class="every">
+      <span class="kicker">At every transfer</span>
+      <span>Handover (e.g. SBAR)</span><span aria-hidden="true">·</span>
+      <span>ID check and wristband</span><span aria-hidden="true">·</span>
+      <span>Observations and NEWS2</span>
+    </div>
+
+    <div class="map-layout">
+      <div class="map" id="map">
+
+        <!-- STAGE 1 -->
+        <div class="stage">
+          <div class="stage-label"><span class="stage-no">Stage 1</span><span class="stage-name">Inflows</span><span class="stage-note">How patients reach the hospital</span></div>
+          <div class="stage-body">
+            <div class="super">
+              <span class="super-title">Unplanned</span>
+              <div class="groups">
+                <div class="group">
+                  <span class="group-label">a) Patient / public initiated</span>
+                  <button class="node" data-id="walkin" type="button"><span class="node-title">ED walk-in</span><span class="node-sub">Arrives at ED themselves</span></button>
+                  <button class="node" data-id="utc" type="button"><span class="node-title">UTC / MIU → ED</span><span class="node-sub">Seen at an urgent treatment centre or minor injuries unit, then sent to ED</span></button>
+                  <button class="node" data-id="nhs111" type="button"><span class="node-title">NHS 111</span><span class="node-sub">Phone or online triage, directed to ED</span></button>
+                </div>
+                <div class="group">
+                  <span class="group-label">b) Ambulance</span>
+                  <button class="node" data-id="amb" type="button"><span class="node-title">999 → ED</span><span class="node-sub">Conveyed to ED</span></button>
+                  <button class="node" data-id="prealert" type="button"><span class="node-title">999 pre-alert</span><span class="node-sub">Straight to resus or a specialist unit: trauma, stroke, STEMI, sepsis</span></button>
+                  <button class="node" data-id="hems" type="button"><span class="node-title">Air ambulance / HEMS</span><span class="node-sub">Usually to ED resus</span></button>
+                </div>
+                <div class="group">
+                  <span class="group-label">c) Clinician / community referral</span>
+                  <button class="node" data-id="gp" type="button"><span class="node-title">GP</span><span class="node-sub">Urgent referral, usually bypassing ED</span></button>
+                  <button class="node" data-id="comm" type="button"><span class="node-title">Community teams</span><span class="node-sub">District nurses, community matrons</span></button>
+                </div>
+              </div>
+            </div>
+            <div class="super">
+              <span class="super-title">Planned</span>
+              <div class="row">
+                <button class="node" data-id="elective" type="button"><span class="node-title">Elective procedure / surgery</span><span class="node-sub">Booked admission via the admission lounge</span></button>
+                <button class="node" data-id="transfer" type="button"><span class="node-title">Transfer from another hospital</span><span class="node-sub">Bed-to-bed, straight into Stage 4</span><span class="tag">Bypasses Stages 2 and 3</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow"><svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true"><path d="M7 0 V18" stroke-width="2"/><polygon points="1,17 13,17 7,26"/></svg><span>Arrival at the front door</span></div>
+
+        <!-- STAGE 2 -->
+        <div class="stage">
+          <div class="stage-label"><span class="stage-no">Stage 2</span><span class="stage-name">Front door</span><span class="stage-note">Where each inflow lands</span></div>
+          <div class="stage-body">
+            <div class="row">
+              <button class="node" data-id="ed" type="button">
+                <span class="node-title">Emergency department</span>
+                <span class="node-sub">Minors · majors · resus</span>
+                <span class="node-line"><span class="arrow">→</span> Resus: ACS to cath lab/CCU · stroke to stroke unit</span>
+                <span class="chips"><span class="chips-label">Exits</span><span class="chip">Home</span><span class="chip">Self-discharge / left without being seen</span><span class="chip">Transfer out</span><span class="chip death">Death</span></span>
+              </button>
+              <button class="node" data-id="sdec" type="button">
+                <span class="node-title">SDEC</span>
+                <span class="node-sub">Same Day Emergency Care</span>
+                <span class="chips"><span class="chips-label">Exits</span><span class="chip">Same-day home</span><span class="chip">Virtual ward</span><span class="chip">Self-discharge</span></span>
+              </button>
+              <button class="node" data-id="lounge" type="button">
+                <span class="node-title">Elective admission lounge / day surgery unit</span>
+                <span class="node-sub">Admission checks before theatre</span>
+                <span class="tag">Bypasses Stage 3</span>
+              </button>
+              <button class="node" data-id="spec" type="button">
+                <span class="node-title">Direct specialist unit</span>
+                <span class="node-sub">Cath lab/CCU · stroke unit</span>
+                <span class="node-line"><span class="arrow">→</span> Steps down to wards</span>
+                <span class="tag">Bypasses Stage 3</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow"><svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true"><path d="M7 0 V18" stroke-width="2"/><polygon points="1,17 13,17 7,26"/></svg><span>Undifferentiated patients go for assessment</span></div>
+
+        <!-- STAGE 3 -->
+        <div class="stage">
+          <div class="stage-label"><span class="stage-no">Stage 3</span><span class="stage-name">Assessment</span><span class="stage-note">Default route for undifferentiated patients</span></div>
+          <div class="stage-body">
+            <div class="row">
+              <button class="node" data-id="amu" type="button">
+                <span class="node-title">AMU</span>
+                <span class="node-sub">Acute medical unit</span>
+                <span class="node-line"><span class="arrow">→</span> Wards</span>
+                <span class="chips"><span class="chips-label">Exits</span><span class="chip">Home</span><span class="chip death">Death</span></span>
+              </button>
+              <button class="node" data-id="sau" type="button">
+                <span class="node-title">SAU</span>
+                <span class="node-sub">Surgical assessment unit, or straight to theatre</span>
+                <span class="node-line"><span class="arrow">→</span> Wards or theatre</span>
+                <span class="chips"><span class="chips-label">Exits</span><span class="chip">Home</span><span class="chip death">Death</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow"><svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true"><path d="M7 0 V18" stroke-width="2"/><polygon points="1,17 13,17 7,26"/></svg><span>Admission. Bypass routes and transfers join here</span></div>
+
+        <!-- STAGE 4 -->
+        <div class="stage">
+          <div class="stage-label"><span class="stage-no">Stage 4</span><span class="stage-name">Inpatient care</span><span class="stage-note">Levels of care and procedures</span></div>
+          <div class="stage-body">
+            <div class="inpatient">
+              <div class="gate" aria-label="Treatment escalation decision">
+                <h4>Treatment escalation / ceilings of care</h4>
+                <span class="gate-forms">TEP · ReSPECT · DNACPR</span>
+                <span class="gate-swap">Ward team ⇄ critical care team discussion</span>
+                <span class="gate-q">Is this patient for escalation?</span>
+                <div class="gate-split">
+                  <div class="gate-yes"><b>Yes</b>Step up the ladder to critical care (Level 2/3)</div>
+                  <div class="gate-no"><b>No</b>Ward-based care within the agreed ceiling</div>
+                </div>
+                <p class="acuity"><b>Acuity</b> how sick a patient is and how much care and monitoring they need. Rising acuity means stepping up (Level 1 → 2 → 3); falling acuity means stepping down.</p>
+              </div>
+
+              <div class="ladder" aria-label="Levels of care ladder">
+                <div class="ladder-head"><h4>Levels of care</h4><span>Highest acuity at the top. Patients step up as acuity rises and step down as it falls.</span></div>
+                <div class="ladder-body">
+                  <div class="ladder-rail" aria-hidden="true"><span class="rail-label">Step up</span><span class="rail-arrow">▲</span><span class="rail-bar"></span><span class="rail-arrow">▼</span><span class="rail-label">Step down</span></div>
+                  <div class="rungs">
+                    <button class="node" data-id="crit" type="button">
+                      <span class="node-title">Critical care</span>
+                      <span class="lvl-stack">
+                        <span class="lvl lvl3"><span><span class="lvl-name">Level 3 · ICU</span><br><span class="lvl-def">Multi-organ support, e.g. CCU, neuro ICU, cardiac ICU</span></span></span>
+                        <span class="lvl lvl2"><span><span class="lvl-name">Level 2 · HDU</span><br><span class="lvl-def">Single organ support</span></span></span>
+                      </span>
+                      <span class="node-line"><span class="arrow">↓</span> Steps down to wards</span>
+                      <span class="chips"><span class="chips-label">Exits</span><span class="chip death">Death</span></span>
+                    </button>
+                    <button class="node" data-id="ward" type="button">
+                      <span class="lvl lvl1"><span><span class="lvl-name">Wards · Level 1</span><br><span class="lvl-def">No organ support</span></span></span>
+                      <span class="node-sub"><b>Medical</b> e.g. general medicine, cardiology, respiratory, stroke, care of the elderly</span>
+                      <span class="node-sub"><b>Surgical</b> e.g. general surgery, T&amp;O, urology, vascular</span>
+                      <span class="node-line"><span class="arrow">↑</span> Steps up to critical care if escalation agreed</span>
+                      <span class="node-line"><span class="arrow">→</span> Stage 5 once MOFD and discharge-ready (Chart B)</span>
+                      <span class="chips"><span class="chips-label">Exits</span><span class="chip">Discharge (Stage 5)</span><span class="chip death">Death</span></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="node" data-id="proc" type="button">
+              <span class="node-title">Procedural areas</span>
+              <span class="node-sub">Emergency theatres · Elective theatres · Recovery (PACU) · Cath lab · Interventional radiology</span>
+              <span class="chips"><span class="chips-label">Exits</span><span class="chip">Wards (Level 1)</span><span class="chip">Critical care (Level 2/3)</span><span class="chip">Home (day case)</span></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flow"><svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true"><path d="M7 0 V18" stroke-width="2"/><polygon points="1,17 13,17 7,26"/></svg><span>From the wards, once medically optimised (MOFD)</span></div>
+
+        <!-- STAGE 5 -->
+        <div class="stage">
+          <div class="stage-label"><span class="stage-no">Stage 5</span><span class="stage-name">Discharge</span><span class="stage-note">Leaving the wards</span></div>
+          <div class="stage-body">
+            <button class="node" data-id="discharge" type="button">
+              <span class="node-title">Discharge readiness</span>
+              <span class="node-sub">MOFD, then medical, therapy, pharmacy, nursing, social care and logistics streams run in parallel. See Chart B.</span>
+            </button>
+            <div class="dest-row">
+              <div class="dest"><strong>Home</strong><span>± package of care</span></div>
+              <div class="dest"><strong>Rehab</strong><span>Step-down bed</span></div>
+              <div class="dest"><strong>Care home</strong><span>New or returning</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside class="panel" id="panel" aria-live="polite">
+        <div class="panel-empty">
+          <p class="kicker">How to use</p>
+          <h3>Select a box</h3>
+          <p style="margin-top:8px">Choosing a location shows what happens to the patient on arrival, where they came from, where they go next and how they can leave.</p>
+        </div>
+        <h4>Key</h4>
+        <div class="legend">
+          <span class="legend-item"><span class="swatch" style="background:var(--l1)"></span>Level 1 · ward, no organ support</span>
+          <span class="legend-item"><span class="swatch" style="background:var(--l2)"></span>Level 2 · HDU, single organ support</span>
+          <span class="legend-item"><span class="swatch" style="background:var(--l3)"></span>Level 3 · ICU, multi-organ support</span>
+          <span class="legend-item"><span class="swatch-dashed"></span>Decision point or linked location</span>
+          <span class="legend-item"><span class="chip death">Death</span>Exit from the hospital</span>
+        </div>
+      </aside>
+    </div>
+
+    <div class="routes">
+      <p class="routes-title">Key routes</p>
+      <table>
+        <thead><tr><th>Patient</th><th>Route</th></tr></thead>
+        <tbody>
+          <tr><td>Undifferentiated medical</td><td>ED → AMU → ward</td></tr>
+          <tr><td>Undifferentiated surgical</td><td>ED → SAU, or straight to theatre</td></tr>
+          <tr><td>GP and community referrals</td><td>Direct to SDEC, AMU or SAU, bypassing ED</td></tr>
+          <tr><td>Stroke</td><td>Stroke unit, directly or via ED resus</td></tr>
+          <tr><td>ACS or arrhythmia</td><td>Cath lab → CCU, directly or via ED resus, then step down to the ward</td></tr>
+          <tr><td>Elective</td><td>Admission lounge → theatre → ward, or home as a day case</td></tr>
+          <tr><td>Transfers in</td><td>Bed-to-bed into the ward or critical care</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="chart" id="ward-discharge">
+    <div class="chart-head">
+      <h2>Chart B · Discharge from the wards</h2>
+      <p>What has to happen before a ward patient can leave. Discharge waits for the slowest stream.</p>
+    </div>
+    <div class="cflow">
+      <div class="cbox key">
+        <span class="kicker">Step 1</span>
+        <h3>Medical review</h3>
+        <p>The patient is deemed medically optimised for discharge (MOFD) by the <b>consultant / medical team</b>.</p>
+      </div>
+      <div class="connector"><span class="bar"></span>Then all streams run in parallel<span class="bar"></span></div>
+      <div class="streams">
+        <div class="stream">
+          <div class="stream-head"><h4>Medical</h4></div>
+          <p class="staff"><b>Doctors</b> (usually FY1/FY2)</p>
+          <ul><li>Discharge summary to GP</li><li>Follow-up arranged: clinic, bloods, pending results</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Therapy</h4><span class="when">Some patients</span></div>
+          <p class="staff"><b>Physiotherapists</b> and <b>occupational therapists</b></p>
+          <ul><li>Functional assessment: mobility, stairs, activities of daily living</li><li>Equipment ordered and delivered</li><li>Outcome: home, home with package of care, rehab, or placement</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Pharmacy</h4></div>
+          <p class="staff"><b>Pharmacists</b> and <b>pharmacy technicians</b></p>
+          <ul><li>Medicines reconciliation and discharge prescription screened</li><li>Take-home medicines (TTOs) dispensed</li><li>Patient counselling on new medicines</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Nursing</h4></div>
+          <p class="staff"><b>Ward nurses</b></p>
+          <ul><li>Discharge checklist: cannula out, obs stable, wounds dressed</li><li>Nursing discharge letter and community referrals, e.g. <b>district nurses</b></li><li>Patient and family told the plan</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Social care</h4><span class="when">When needed</span></div>
+          <p class="staff"><b>Social workers</b> and <b>discharge coordinators / flow team</b></p>
+          <ul><li>Package of care or placement arranged</li><li>Delayed patients tracked</li><li>Capacity or safeguarding decisions where relevant</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Logistics</h4></div>
+          <p class="staff"><b>Patient transport crews</b> (or family) and <b>porters</b></p>
+          <ul><li>Transport arranged</li><li>Move to the discharge lounge to free the bed</li></ul>
+        </div>
+      </div>
+      <div class="connector"><span class="bar"></span>All streams complete<span class="bar"></span></div>
+      <div class="cbox key">
+        <span class="kicker">Step 2</span>
+        <h3>Ready for discharge</h3>
+      </div>
+      <div class="connector"><span class="bar"></span>Step 3 · Destination<span class="bar"></span></div>
+      <div class="cdest">
+        <div class="dest"><strong>Home</strong><span>± package of care</span></div>
+        <div class="dest"><strong>Rehab</strong><span>Step-down bed</span></div>
+        <div class="dest"><strong>Care home</strong><span>New or returning</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart" id="short-discharge">
+    <div class="chart-head">
+      <h2>Chart C · Short-form discharge</h2>
+      <p>ED, SDEC, AMU/SAU and day case. No MOFD step: the decision is whether the patient is safe to go home.</p>
+    </div>
+    <div class="cflow">
+      <div class="cbox key">
+        <span class="kicker">Step 1</span>
+        <h3>Clinical decision</h3>
+        <p>The patient is assessed and safe to go home.</p>
+        <ul>
+          <li><b>ED, SDEC, AMU, SAU:</b> decided by an <b>ED doctor</b>, <b>advanced clinical practitioner (ACP)</b> or <b>acute medical/surgical team</b>, often with <b>senior / consultant review</b></li>
+          <li><b>Day case:</b> decided by the <b>anaesthetist</b> or <b>surgeon</b> against recovery criteria (awake, pain controlled, eating and drinking, passed urine)</li>
+        </ul>
+      </div>
+      <div class="connector"><span class="bar"></span>Then, in parallel<span class="bar"></span></div>
+      <div class="streams">
+        <div class="stream">
+          <div class="stream-head"><h4>Medical</h4></div>
+          <p class="staff"><b>Doctors</b> / <b>ACPs</b> (day case: <b>surgeon</b>)</p>
+          <ul><li>Discharge letter to GP</li><li>Safety-netting advice: when to return</li><li>Follow-up arranged if needed: clinic, GP, results</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Pharmacy</h4><span class="when">Not always needed</span></div>
+          <p class="staff"><b>Doctors</b> prescribe, <b>nurses</b> supply</p>
+          <ul><li>Short supply of medicines, often pre-packed from unit stock, or a prescription for a community pharmacy</li><li><span class="dc">Day case:</span> commonly painkillers</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Nursing</h4></div>
+          <p class="staff"><b>ED / unit nurses</b> (day case: <b>recovery / day surgery nurses</b>)</p>
+          <ul><li>Cannula out, observations checked</li><li>Advice leaflet given</li><li>Patient and family told the plan</li><li><span class="dc">Day case:</span> wound care and post-procedure advice</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Admin</h4></div>
+          <p class="staff"><b>ED receptionists / ward clerks</b> and <b>clinic booking team</b></p>
+          <ul><li>Discharge recorded on the hospital system</li><li>GP letter sent</li><li>Follow-up appointment booked</li></ul>
+        </div>
+        <div class="stream">
+          <div class="stream-head"><h4>Logistics</h4></div>
+          <p class="staff"><b>Family</b> or <b>patient transport crews</b></p>
+          <ul><li>Transport home</li><li><span class="dc">Day case:</span> a <b>responsible adult</b> takes them home and stays overnight after general anaesthetic</li></ul>
+        </div>
+      </div>
+      <div class="connector"><span class="bar"></span>All streams complete<span class="bar"></span></div>
+      <div class="cbox key">
+        <span class="kicker">Step 2</span>
+        <h3>Ready for discharge</h3>
+      </div>
+      <div class="connector"><span class="bar"></span>Step 3 · Destination<span class="bar"></span></div>
+      <div class="cdest">
+        <div class="dest"><strong>Home</strong><span>± follow-up</span></div>
+      </div>
+      <div class="notes">
+        <p>Pharmacy is only needed if new medicines are started.</p>
+        <p>Interpreters and specialty teams may be involved where relevant.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CASE 1 -->
+<div class="tabpanel" data-panel="case1" role="tabpanel" hidden>
+  <section class="chart">
+    <div class="case-head">
+      <div class="patient">
+        <p class="kicker">Case 1 · Major trauma</p>
+        <h2>Daniel, 30</h2>
+        <dl class="facts">
+          <div><dt>Presentation</dt><dd>Motorcyclist hit by a car at speed</dd></div>
+          <div><dt>Route</dt><dd>999 pre-alert → ED resus → theatre → ICU (Level 3) → trauma ward → home</dd></div>
+          <div><dt>Length of stay</dt><dd>About 8 days, including 2 in ICU</dd></div>
+        </dl>
+      </div>
+      <p class="case-story">Daniel arrives bleeding from a ruptured spleen with a broken thigh bone. He is too unstable for the surgical assessment unit, so he goes from resus straight to theatre. After surgery he spends two days in intensive care, steps down to the trauma ward and goes home once he is safe on crutches. His journey is high acuity but quick to discharge, because he is young and independent.</p>
+    </div>
+    <ol class="timeline">
+      <li><span class="t-time">0–45 min</span><span class="t-place">Scene and ambulance</span></li>
+      <li><span class="t-time">45 min – 1 h 45</span><span class="t-place">ED resus</span></li>
+      <li><span class="t-time">2 h – 5 h</span><span class="t-place">Emergency theatre and recovery</span></li>
+      <li><span class="t-time">Day 0 – 2</span><span class="t-place">ICU (Level 3)</span></li>
+      <li><span class="t-time">Day 2 – 8</span><span class="t-place">Trauma ward (Level 1)</span></li>
+      <li><span class="t-time">Day 8</span><span class="t-place">Discharged home</span></li>
+    </ol>
+    <p class="hint">Highlighted boxes show Daniel's journey. Greyed boxes were not used.</p>
+    <div class="case-map-slot" data-case="case1"></div>
+    <div class="takeaway"><span class="kicker">Teaching point</span><p>Unplanned and high acuity, but short. The front door, theatre and ICU did the heavy lifting, and discharge was simple because Daniel needed no social care.</p></div>
+  </section>
+</div>
+
+<!-- CASE 2 -->
+<div class="tabpanel" data-panel="case2" role="tabpanel" hidden>
+  <section class="chart">
+    <div class="case-head">
+      <div class="patient">
+        <p class="kicker">Case 2 · Chest infection</p>
+        <h2>Mr Arthur Ellis, 84</h2>
+        <dl class="facts">
+          <div><dt>Presentation</dt><dd>Confused and breathless at home; lives alone, walks with a stick</dd></div>
+          <div><dt>Route</dt><dd>999 → ED → AMU → respiratory ward → care home</dd></div>
+          <div><dt>Length of stay</dt><dd>About 19 days, 12 of them after he was medically optimised</dd></div>
+        </dl>
+      </div>
+      <p class="case-story">Arthur has pneumonia. He improves on the respiratory ward and is medically optimised by day 7, but he has become weaker in hospital. A package of care at home is arranged and then judged unsafe, so he waits on the ward until a care home place is agreed. Most of his stay happens after he is medically ready.</p>
+    </div>
+    <ol class="timeline">
+      <li><span class="t-time">0–1 h</span><span class="t-place">Home and ambulance</span></li>
+      <li><span class="t-time">1 h – 6 h</span><span class="t-place">ED</span></li>
+      <li><span class="t-time">6 h – Day 1</span><span class="t-place">AMU</span></li>
+      <li><span class="t-time">Day 1 – 7</span><span class="t-place">Respiratory ward</span></li>
+      <li class="t-delay"><span class="t-time">Day 7 – 19</span><span class="t-place">Medically optimised, waiting</span></li>
+      <li><span class="t-time">Day 19</span><span class="t-place">Moves to a care home</span></li>
+    </ol>
+    <p class="hint">Highlighted boxes show Arthur's journey. Greyed boxes were not used.</p>
+    <div class="case-map-slot" data-case="case2"></div>
+    <div class="takeaway"><span class="kicker">Teaching point</span><p>Lower acuity but long. Twelve days in a hospital bed while medically ready is a delayed discharge: Arthur risks losing more strength and catching an infection, and the bed cannot be used for the next patient. This is where flow breaks down and where much innovation is aimed.</p></div>
+  </section>
+</div>
+
+<!-- ABBREVIATIONS -->
+<div class="tabpanel" data-panel="abbreviations" role="tabpanel" hidden>
+  <section class="chart">
+    <div class="chart-head">
+      <h2>Abbreviations</h2>
+      <label class="filter" for="abbr-filter"><span class="kicker">Filter</span><input id="abbr-filter" type="search" placeholder="e.g. ICU or discharge" autocomplete="off"></label>
+    </div>
+    <div class="routes abbr">
+      <table>
+        <thead><tr><th>Abbreviation</th><th>Meaning</th></tr></thead>
+        <tbody id="abbr-body">
+          <tr><td>ACP</td><td>Advanced clinical practitioner</td></tr>
+          <tr><td>ACS</td><td>Acute coronary syndrome</td></tr>
+          <tr><td>ADLs</td><td>Activities of daily living: washing, dressing, eating, toileting</td></tr>
+          <tr><td>AMU</td><td>Acute medical unit</td></tr>
+          <tr><td>CCU</td><td>Coronary care unit</td></tr>
+          <tr><td>CT</td><td>Computed tomography scan</td></tr>
+          <tr><td>CXR</td><td>Chest X-ray</td></tr>
+          <tr><td>DNACPR</td><td>Do not attempt cardiopulmonary resuscitation</td></tr>
+          <tr><td>ECG</td><td>Electrocardiogram</td></tr>
+          <tr><td>ED</td><td>Emergency department (A&amp;E)</td></tr>
+          <tr><td>FY1 / FY2</td><td>Foundation year 1 and 2 doctors, in their first two years after qualifying</td></tr>
+          <tr><td>GP</td><td>General practitioner</td></tr>
+          <tr><td>HDU</td><td>High dependency unit (Level 2 care)</td></tr>
+          <tr><td>HEMS</td><td>Helicopter emergency medical service (air ambulance)</td></tr>
+          <tr><td>ICU</td><td>Intensive care unit (Level 3 care)</td></tr>
+          <tr><td>IR</td><td>Interventional radiology</td></tr>
+          <tr><td>IV</td><td>Intravenous</td></tr>
+          <tr><td>MIU</td><td>Minor injuries unit</td></tr>
+          <tr><td>MOFD</td><td>Medically optimised for discharge</td></tr>
+          <tr><td>NEWS2</td><td>National Early Warning Score 2: a score from vital signs that flags deterioration</td></tr>
+          <tr><td>Obs</td><td>Observations: heart rate, blood pressure, breathing rate, oxygen level, temperature, consciousness</td></tr>
+          <tr><td>PACU</td><td>Post-anaesthesia care unit (theatre recovery)</td></tr>
+          <tr><td>POC</td><td>Package of care: carers visiting at home</td></tr>
+          <tr><td>ReSPECT</td><td>Recommended Summary Plan for Emergency Care and Treatment</td></tr>
+          <tr><td>RTA</td><td>Road traffic accident</td></tr>
+          <tr><td>SAU</td><td>Surgical assessment unit</td></tr>
+          <tr><td>SBAR</td><td>Situation, Background, Assessment, Recommendation: a handover structure</td></tr>
+          <tr><td>SDEC</td><td>Same Day Emergency Care</td></tr>
+          <tr><td>STEMI</td><td>ST-elevation myocardial infarction, a type of heart attack</td></tr>
+          <tr><td>T&amp;O</td><td>Trauma and orthopaedics</td></tr>
+          <tr><td>TEP</td><td>Treatment escalation plan</td></tr>
+          <tr><td>TTOs</td><td>"To take out": medicines supplied for home</td></tr>
+          <tr><td>UTC</td><td>Urgent treatment centre</td></tr>
+          <tr><td>VTE</td><td>Venous thromboembolism (blood clots)</td></tr>
+          <tr><td>WHO checklist</td><td>World Health Organization surgical safety checklist</td></tr>
+        </tbody>
+      </table>
+      <p class="abbr-empty" id="abbr-empty" hidden>No abbreviations match that filter.</p>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<footer>
+  <div class="wrap">Adult acute and elective pathways only. Paediatric, maternity and mental health pathways are excluded. Prepared for MTID teaching.</div>
+</footer>
+
+<script>
+(function () {
+  var NODES = {
+    walkin:   { title: "ED walk-in", stage: "Stage 1 · Unplanned, patient initiated", desc: "The patient comes to the emergency department on their own." },
+    utc:      { title: "UTC / MIU → ED", stage: "Stage 1 · Unplanned, patient initiated", desc: "Seen first at an urgent treatment centre or minor injuries unit, then sent on to ED." },
+    nhs111:   { title: "NHS 111", stage: "Stage 1 · Unplanned, patient initiated", desc: "Phone or online triage directs the patient to ED." },
+    amb:      { title: "999 → ED", stage: "Stage 1 · Unplanned, ambulance", desc: "A 999 call; the crew assesses and conveys the patient to ED." },
+    prealert: { title: "999 pre-alert", stage: "Stage 1 · Unplanned, ambulance", desc: "The crew alerts the hospital ahead of arrival. Trauma and sepsis go to resus; STEMI and some strokes go direct to the specialist unit." },
+    hems:     { title: "Air ambulance / HEMS", stage: "Stage 1 · Unplanned, ambulance", desc: "Helicopter emergency medical service, usually to ED resus." },
+    gp:       { title: "GP referral", stage: "Stage 1 · Unplanned, clinician referral", desc: "Urgent GP referral, usually straight to SDEC or AMU/SAU, bypassing ED." },
+    comm:     { title: "Community teams", stage: "Stage 1 · Unplanned, clinician referral", desc: "District nurses and community matrons refer in the same way as GPs." },
+    elective: { title: "Elective procedure / surgery", stage: "Stage 1 · Planned", desc: "A booked admission for a procedure or surgery." },
+    transfer: { title: "Transfer from another hospital", stage: "Stage 1 · Planned (sometimes urgent)", desc: "Moves bed-to-bed into Stage 4, bypassing the front door.", arrival: ["Transfer letter reviewed", "Admission assessment", "Infection screening swabs"] },
+    ed:       { title: "Emergency department", stage: "Stage 2 · Front door", desc: "Minors, majors and resus. Patients diagnosed with ACS or stroke in resus go on to the specialist unit.", arrival: ["Ambulance handover: pre-hospital obs, ECG, treatment given", "Booked in", "Triage: pain score, ECG if chest pain", "Clerking: history and examination", "Bloods and scans"], exits: ["Home", "Self-discharge / left without being seen", "Transfer out", "Death"] },
+    sdec:     { title: "SDEC", stage: "Stage 2 · Front door", desc: "Same Day Emergency Care, which aims to avoid admission.", arrival: ["Booked in", "Nursing observations", "Clerking: history and examination", "Bloods and scans"], exits: ["Same-day home", "Virtual ward", "Self-discharge"] },
+    lounge:   { title: "Elective admission lounge / day surgery unit", stage: "Stage 2 · Front door", desc: "Elective patients are prepared here, then go straight to theatre. Bypasses Stage 3.", arrival: ["Admission checks: fasting, consent confirmed, site marked", "Anaesthetic review"] },
+    spec:     { title: "Direct specialist unit", stage: "Stage 2 · Front door", desc: "Cath lab/CCU or stroke unit. Bypasses Stage 3, then steps down to the ward.", arrival: ["Brief assessment", "ECG or rapid scan", "Consent", "Straight to procedure"] },
+    amu:      { title: "AMU", stage: "Stage 3 · Assessment", desc: "Acute medical unit, the default route for undifferentiated medical patients.", arrival: ["Medical clerking if not done in ED", "Nursing admission assessment: falls, pressure, VTE and nutrition risk", "Further bloods and imaging", "Drug chart started", "Post-take ward round: consultant review of the plan"], exits: ["Home", "Death"] },
+    sau:      { title: "SAU", stage: "Stage 3 · Assessment", desc: "Surgical assessment unit. Some surgical patients go straight to theatre instead.", arrival: ["Surgical clerking if not done in ED", "Nursing admission assessment: falls, pressure, VTE and nutrition risk", "Further bloods and imaging", "Drug chart started", "Post-take ward round: consultant review of the plan"], exits: ["Home", "Death"] },
+    ward:     { title: "Wards · Level 1", stage: "Stage 4 · Inpatient care", desc: "No organ support. Medical and surgical specialty wards. Escalation to critical care goes through the treatment escalation decision.", arrival: ["Specialty clerking: history, examination, plan confirmed", "Nursing admission checks repeated", "Ongoing bloods and investigations", "From critical care: ICU discharge summary, lines removed, outreach follow-up"], exits: ["Discharge (Stage 5)", "Death"] },
+    crit:     { title: "Critical care · Level 2/3", stage: "Stage 4 · Inpatient care", desc: "Level 2 HDU: single organ support. Level 3 ICU: multi-organ support (e.g. CCU, neuro ICU, cardiac ICU). Patients step down to the ward or die; there is no direct discharge home.", arrival: ["Outreach review", "Escalation decision (TEP)", "Arterial blood gas", "ICU admission assessment", "Lines: arterial, central", "Airway or breathing support as needed", "Continuous monitoring"], exits: ["Death"] },
+    proc:     { title: "Procedural areas", stage: "Stage 4 · Inpatient care", desc: "Emergency and elective theatres, recovery (PACU), cath lab and interventional radiology.", arrival: ["Consent and fasting", "Pre-op checks", "WHO surgical safety checklist", "Anaesthetic and procedure", "On leaving: recovery observations, operation note, post-op instructions, pain plan"], exits: ["Wards (Level 1)", "Critical care (Level 2/3)", "Home (day case)"] },
+    discharge:{ title: "Discharge readiness", stage: "Stage 5 · Discharge", desc: "Once MOFD, the medical, therapy, pharmacy, nursing, social care and logistics streams run in parallel. Destinations: home (± package of care), rehab, or care home. See Chart B." }
+  };
+
+  var EDGES = [
+    ["walkin","ed"],["utc","ed"],["nhs111","ed"],
+    ["amb","ed"],["prealert","ed","to resus"],["prealert","spec","STEMI or stroke"],["hems","ed","to resus"],
+    ["gp","sdec"],["gp","amu"],["gp","sau"],["comm","sdec"],["comm","amu"],["comm","sau"],
+    ["elective","lounge"],["transfer","ward","bed-to-bed"],["transfer","crit","bed-to-bed"],
+    ["ed","amu"],["ed","sau"],["ed","sdec","streamed"],["ed","spec","ACS or stroke diagnosed in resus"],["ed","proc","straight to theatre"],
+    ["sdec","amu","needs admission"],["sdec","sau","needs admission"],
+    ["lounge","proc","bypasses Stage 3"],["spec","ward","step down"],
+    ["amu","ward","specialty acceptance"],["sau","ward"],["sau","proc","to theatre"],
+    ["ward","crit","escalation agreed (TEP)"],["ward","proc","for a procedure"],["ward","discharge","MOFD and discharge-ready"],
+    ["crit","ward","step down"],["proc","ward"],["proc","crit"]
+  ];
+
+  var map = document.getElementById("map");
+  var panel = document.getElementById("panel");
+  var panelDefault = panel.innerHTML;
+  var nodes = map.querySelectorAll(".node");
+  var current = null;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function linkList(items) {
+    if (!items.length) return "";
+    return '<div class="panel-links">' + items.map(function (it) {
+      return '<button type="button" class="panel-link" data-go="' + it.id + '">' + esc(NODES[it.id].title) + (it.label ? '<small>' + esc(it.label) + '</small>' : '') + '</button>';
+    }).join("") + '</div>';
+  }
+
+  function clearSel() {
+    current = null;
+    map.classList.remove("has-sel");
+    nodes.forEach(function (n) { n.classList.remove("is-selected", "is-linked"); n.setAttribute("aria-pressed", "false"); });
+    panel.innerHTML = panelDefault;
+    panel.classList.remove("is-open");
+  }
+
+  function select(id) {
+    if (current === id) { clearSel(); return; }
+    current = id;
+    var from = [], to = [];
+    EDGES.forEach(function (e) {
+      if (e[1] === id) from.push({ id: e[0], label: e[2] });
+      if (e[0] === id) to.push({ id: e[1], label: e[2] });
+    });
+    var linked = {};
+    from.concat(to).forEach(function (x) { linked[x.id] = true; });
+    map.classList.add("has-sel");
+    nodes.forEach(function (n) {
+      var nid = n.getAttribute("data-id");
+      n.classList.toggle("is-selected", nid === id);
+      n.classList.toggle("is-linked", !!linked[nid]);
+      n.setAttribute("aria-pressed", nid === id ? "true" : "false");
+    });
+
+    var d = NODES[id];
+    var html = '<div class="panel-top"><div><p class="kicker">' + esc(d.stage) + '</p><h3>' + esc(d.title) + '</h3></div><button type="button" class="panel-close" data-close>Close</button></div>';
+    html += '<p class="panel-desc">' + esc(d.desc) + '</p>';
+    if (d.arrival) html += '<h4>What happens to the patient</h4><ul>' + d.arrival.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join("") + '</ul>';
+    if (from.length) html += '<h4>Comes from</h4>' + linkList(from);
+    if (to.length) html += '<h4>Goes next</h4>' + linkList(to);
+    if (d.exits) html += '<h4>Exits</h4><div class="chips">' + d.exits.map(function (x) { return '<span class="chip' + (x === "Death" ? " death" : "") + '">' + esc(x) + '</span>'; }).join("") + '</div>';
+    panel.innerHTML = html;
+    panel.classList.add("is-open");
+    panel.scrollTop = 0;
+  }
+
+  nodes.forEach(function (n) {
+    n.setAttribute("aria-pressed", "false");
+    n.addEventListener("click", function () { select(n.getAttribute("data-id")); });
+  });
+
+  panel.addEventListener("click", function (ev) {
+    var go = ev.target.closest("[data-go]");
+    if (go) { var id = go.getAttribute("data-go"); current = null; select(id); return; }
+    if (ev.target.closest("[data-close]")) clearSel();
+  });
+
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && current) clearSel(); });
+
+  /* ---------- Patient cases ---------- */
+  var CASES = {
+    case1: {
+      nodes: {
+        prealert: { time: "0 – 45 min", where: "Scene and ambulance", items: ["Motorbike crash; bystander calls 999", "Fast heart rate, low blood pressure, deformed thigh", "Leg splinted, pain relief and IV fluids given", "Crew pre-alerts the hospital: major trauma"] },
+        ed: { time: "45 min – 1 h 45", where: "Resus with the trauma team", items: ["Ambulance handover (SBAR)", "Head-to-toe trauma assessment", "Bloods, including blood group for transfusion", "Blood transfusion; still unstable", "Trauma CT: bleeding spleen and fractured femur", "Decision: straight to theatre"] },
+        proc: { time: "2 h – 5 h", where: "Emergency theatre and recovery", items: ["Consent and WHO surgical safety checklist", "General anaesthetic", "Spleen removed (splenectomy)", "Femur fixed by the orthopaedic team", "Stays asleep and ventilated after major blood loss", "Transferred to ICU"] },
+        crit: { time: "Day 0 – 2", where: "ICU (Level 3)", items: ["Ventilated, with drugs to support blood pressure", "Arterial and central lines, continuous monitoring", "Blood products to correct clotting; regular blood gases", "Day 1: woken up and breathing tube removed", "Day 2: stepped down to the ward with an ICU discharge summary"] },
+        ward: { time: "Day 2 – 8", where: "Trauma ward (Level 1)", items: ["Handover from ICU; outreach team follow-up", "Specialty clerking and plan", "Pain relief and VTE prevention", "Daily bloods and wound checks", "Physiotherapy: walking on crutches"] },
+        discharge: { time: "Day 8", where: "MOFD and discharge streams", items: ["Medical: discharge summary to GP, fracture clinic booked", "Therapy: safe on crutches and stairs, no package of care", "Pharmacy: painkillers, blood-thinning injections, vaccines and antibiotics for life without a spleen", "Nursing: district nurse referral for wound care", "Logistics: partner collects him"] }
+      },
+      order: ["prealert", "ed", "proc", "crit", "ward", "discharge"],
+      procFirst: true,
+      levels: { used: "lvl3", unused: "lvl2" },
+      stages: { 3: { text: "<b>Not used.</b> Daniel was too unstable for the surgical assessment unit, so he went from resus straight to theatre." } },
+      dest: "home"
+    },
+    case2: {
+      nodes: {
+        amb: { time: "0 – 1 h", where: "Home and ambulance", items: ["Daughter finds him confused and breathless", "Paramedics: high temperature, fast breathing, low oxygen", "Oxygen started; conveyed to ED"] },
+        ed: { time: "1 h – 6 h", where: "ED majors", items: ["Ambulance handover (SBAR)", "Triage: high NEWS2", "Sepsis screen, bloods, chest X-ray: pneumonia", "Oxygen, IV fluids, IV antibiotics within the hour", "Decision to admit"] },
+        amu: { time: "6 h – Day 1", where: "Acute medical unit", items: ["Medical clerking", "Nursing assessments: high falls risk, new confusion (delirium)", "Post-take ward round with the consultant", "Treatment escalation plan agreed with Arthur and his daughter", "Respiratory team accepts him"] },
+        ward: { time: "Day 1 – 7", where: "Respiratory ward (Level 1)", items: ["Specialty clerking", "Oxygen weaned off; confusion clears", "Antibiotics switched from IV to tablets", "Physiotherapy: weaker than before admission"] },
+        discharge: { time: "Day 7 – 19", where: "MOFD, then a delayed discharge", items: ["Day 7: consultant deems him MOFD", "Therapy: needs help to stand, wash and dress", "Social care: carers four times a day arranged", "Judged unsafe: needs help at night, high falls risk", "Family discussion: care home placement agreed", "Pharmacy TTOs, nursing transfer letter, patient transport"] }
+      },
+      order: ["amb", "ed", "amu", "ward", "discharge"],
+      gate: { yes: false, text: "On AMU: ward-based care, not for ICU. DNACPR agreed." },
+      stages: { 5: { alert: true, text: "<b>Delayed discharge: 12 days.</b> Arthur was medically ready on day 7 but had nowhere safe to go. He waited on the ward until day 19." } },
+      dest: "carehome"
+    }
+  };
+  var DEST_KEYS = ["home", "rehab", "carehome"];
+
+  function buildCase(slot, data) {
+    var clone = map.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.className = "map case-map";
+    clone.querySelectorAll(".node").forEach(function (btn) {
+      var id = btn.getAttribute("data-id");
+      var div = document.createElement("div");
+      div.className = "node";
+      div.setAttribute("data-id", id);
+      div.innerHTML = btn.innerHTML;
+      var c = data.nodes[id];
+      if (c) {
+        div.classList.add("is-used");
+        var step = data.order ? data.order.indexOf(id) + 1 : 0;
+        div.insertAdjacentHTML("beforeend", '<span class="case-note"><span class="case-time">' + (step ? "Step " + step + " · " : "") + c.time + '</span><span class="case-where">' + c.where + '</span><ul>' + c.items.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + "</ul></span>");
+      } else {
+        div.classList.add("is-unused");
+      }
+      btn.replaceWith(div);
+    });
+    if (data.levels) {
+      clone.querySelectorAll(".node[data-id='crit'] ." + data.levels.unused).forEach(function (el) { el.classList.add("is-unused"); });
+      clone.querySelectorAll(".node[data-id='crit'] ." + data.levels.used).forEach(function (el) { el.classList.add("lvl-used"); });
+    }
+    if (data.procFirst) {
+      var pn = clone.querySelector(".node[data-id='proc']");
+      if (pn) pn.parentNode.insertBefore(pn, pn.parentNode.firstElementChild);
+    }
+    if (data.critFirst) {
+      var cn = clone.querySelector(".node[data-id='crit']");
+      var wn = clone.querySelector(".node[data-id='ward']");
+      var inp = cn && cn.parentNode;
+      if (inp && wn) { inp.insertBefore(cn, inp.firstElementChild); inp.appendChild(wn); }
+    }
+    var gate = clone.querySelector(".gate");
+    if (gate) {
+      if (data.gate) {
+        gate.classList.add("is-used");
+        gate.querySelector(data.gate.yes ? ".gate-no" : ".gate-yes").classList.add("is-unused");
+        gate.insertAdjacentHTML("beforeend", '<span class="case-note"><span class="case-time">Decision</span><span class="case-where">' + esc(data.gate.text) + "</span></span>");
+      } else {
+        gate.classList.add("is-unused");
+      }
+    }
+    clone.querySelectorAll(".dest-row .dest").forEach(function (d, i) {
+      d.classList.add(DEST_KEYS[i] === data.dest ? "is-used" : "is-unused");
+    });
+    clone.querySelectorAll(".stage").forEach(function (st, i) {
+      var note = data.stages[i + 1];
+      if (note) {
+        st.querySelector(".stage-body").insertAdjacentHTML("afterbegin", '<p class="stage-callout' + (note.alert ? " alert" : "") + '">' + note.text + "</p>");
+      }
+    });
+    slot.appendChild(clone);
+  }
+
+  document.querySelectorAll(".case-map-slot").forEach(function (slot) {
+    buildCase(slot, CASES[slot.getAttribute("data-case")]);
+  });
+
+  /* ---------- Tabs ---------- */
+  var tabs = document.querySelectorAll(".tab");
+  var panels = document.querySelectorAll(".tabpanel");
+  function showTab(name) {
+    tabs.forEach(function (t) { t.setAttribute("aria-selected", t.getAttribute("data-tab") === name ? "true" : "false"); });
+    panels.forEach(function (p) { p.hidden = p.getAttribute("data-panel") !== name; });
+    if (name !== "journey" && current) clearSel();
+  }
+  tabs.forEach(function (t) { t.addEventListener("click", function () { showTab(t.getAttribute("data-tab")); }); });
+  var startHash = (location.hash || "").replace("#", "");
+  if (startHash === "case1" || startHash === "case2" || startHash === "abbreviations") showTab(startHash);
+
+  /* ---------- Abbreviation filter ---------- */
+  var filter = document.getElementById("abbr-filter");
+  var rows = document.querySelectorAll("#abbr-body tr");
+  var empty = document.getElementById("abbr-empty");
+  filter.addEventListener("input", function () {
+    var q = filter.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var hit = !q || r.textContent.toLowerCase().indexOf(q) !== -1;
+      r.hidden = !hit;
+      if (hit) shown++;
+    });
+    empty.hidden = shown !== 0;
+  });
+})();
+</script>
